@@ -150,6 +150,8 @@ AC_DEFINE_UNQUOTED(SH_PATH, "$SH", [path to sh])
 # configure-time, and distinguishes them from the VGA_*/VGO_*/VGP_*
 # variables used when compiling C files.
 
+VGCONF_PLATFORM_ARM_ARCH=
+
 AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([for a supported CPU])
@@ -186,15 +188,26 @@ case "${host_cpu}" in
         ;;
 
      armv7*)
-	AC_MSG_RESULT([ok (${host_cpu})])
-	ARCH_MAX="arm"
-	;;
+	# This means we use a armv7 toolchain - at least Cortex-A8
+        AC_MSG_RESULT([ok (${host_cpu})])
+        ARCH_MAX="arm"
+        VGCONF_PLATFORM_ARM_ARCH="-march=armv7 -mcpu=cortex-a8"
+           ;;
+
+     arm*)
+        # Generic arm toolchain - we will target armv6
+        AC_MSG_RESULT([(${host_cpu}) - no armv7 toolchain specified, will enforce armv6 when compiling])
+        ARCH_MAX="arm"
+        VGCONF_PLATFORM_ARM_ARCH="-march=armv6"
+        AC_DEFINE(ARM_ARCH_V6,1,"Defined for v6 architectures")
+       ;;
 
      *) 
 	AC_MSG_RESULT([no (${host_cpu})])
 	AC_MSG_ERROR([Unsupported host architecture. Sorry])
 	;;
 esac
+AC_SUBST(VGCONF_PLATFORM_ARM_ARCH)
 
 #----------------------------------------------------------------------------
 

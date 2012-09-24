@@ -2033,8 +2033,19 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
       mreq.rkind = MAny;
    }
 
+   /* handle alignment to 4 pages we need for MAP_FIXED to succeed on ARM */
+   vg_assert(VKI_SHMLBA >= VKI_PAGE_SIZE);
+   if ( (arg4 & VKI_MAP_SHARED) && (arg1 == 0) && (VKI_SHMLBA > VKI_PAGE_SIZE) ) {
+      mreq.len += VKI_SHMLBA - VKI_PAGE_SIZE;
+   }
    /* Enquire ... */
    advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
+   if (mreq_ok && (arg4 & VKI_MAP_SHARED) && (arg1 == 0) && (VKI_SHMLBA > VKI_PAGE_SIZE) ) {
+       Addr newaddr = VG_ROUNDUP(advised, VKI_SHMLBA);
+       mreq.len -= (newaddr - advised);
+       advised   = newaddr;
+   }
+
    if (!mreq_ok) {
       /* Our request was bounced, so we'd better fail. */
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
